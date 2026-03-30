@@ -1,0 +1,123 @@
+service:
+  name: medinovai-integration-gateway
+  tier: 2
+  category: integration
+  domain: data-integration
+  compliance_tier: 2
+  squad: security-squad
+  version: 1.0.0
+  status: development
+  language: python
+  framework: fastapi
+
+description: |
+  Core ingestion gateway for the MedinovAI Integration Platform. Receives clinical data
+  from site-level EPG instances and external connectors, validates format (FHIR R4, HL7v2),
+  applies canonical transformation, emits CloudEvents, and routes to OMOP Lakehouse.
+
+dependencies:
+  - medinovai-epg (mTLS upstream)
+  - medinovai-real-time-stream-bus (CloudEvents downstream)
+  - medinovai-data-services (OMOP storage)
+  - medinovai-secrets-manager-bridge (connector credentials)
+  - medinovai-registry (service discovery)
+
+interfaces:
+  ingress:
+    - protocol: HTTPS/mTLS
+      source: medinovai-epg
+      format: FHIR R4 Bundle, HL7v2, CSV
+    - protocol: HTTPS
+      source: external-connectors
+      format: FHIR R4
+  egress:
+    - protocol: CloudEvents/Kafka
+      target: medinovai-real-time-stream-bus
+      events:
+        - medinovai.integration.record.ingested
+        - medinovai.integration.record.failed
+        - medinovai.integration.batch.completed
+    - protocol: SQL
+      target: medinovai-omop-lakehouse
+      format: OMOP CDM v5.4
+
+endpoints:
+  - path: /health
+    method: GET
+    auth: none
+    description: Health check
+  - path: /ready
+    method: GET
+    auth: none
+    description: Readiness probe (EPG + DB connectivity)
+  - path: /api/v1/ingest
+    method: POST
+    auth: bearer
+    description: Ingest single clinical record
+    input_formats: [fhir_r4, hl7v2]
+  - path: /api/v1/ingest/batch
+    method: POST
+    auth: bearer
+    description: Batch ingest clinical records
+    input_formats: [fhir_r4, hl7v2, csv]
+  - path: /api/v1/ingest/status/{batch_id}
+    method: GET
+    auth: bearer
+    description: Check batch ingestion status
+  - path: /api/v1/connectors
+    method: GET
+    auth: bearer
+    description: List registered external connectors
+  - path: /api/v1/connectors/{id}/health
+    method: GET
+    auth: bearer
+    description: Health check for specific connector
+  - path: /api/v1/mappings/fhir-to-omop
+    method: POST
+    auth: bearer
+    description: Transform FHIR resources to OMOP CDM records
+
+data_handling:
+  phi_handling: transit_only
+  encryption_at_rest: false
+  encryption_in_transit: tls_1_3_mtls
+  audit_logging: true
+  consent_check: delegated_to_epg
+
+compliance:
+  hipaa:
+    - phi_transit_encrypted
+    - audit_trail_on_all_ingestion
+    - baa_required_for_external_connectors
+  fda_21cfr11:
+    - audit_trail_immutable
+    - electronic_records_integrity
+
+performance:
+  latency_p99_ms: 500
+  throughput_rps: 100
+  batch_size_max: 10000
+  concurrent_connectors: 8
+
+testing:
+  unit:
+    - FHIR R4 Bundle parsing
+    - HL7v2 message parsing
+    - OMOP CDM mapping correctness
+    - CloudEvents emission format
+  integration:
+    - EPG mTLS handshake
+    - End-to-end FHIR to OMOP pipeline
+    - Connector health check propagation
+  e2e:
+    - Full ingestion pipeline with de-identification
+    - Multi-site aggregation
+    - Error recovery and dead letter queue
+
+acceptance_criteria:
+  - FHIR R4 Bundle ingested and mapped to OMOP within 500ms p99
+  - HL7v2 ADT/ORM/ORU parsed and mapped correctly
+  - mTLS verified between EPG and Gateway
+  - All ingestion events emit CloudEvents
+  - 3 external connectors registered and health-checked
+  - Batch ingestion of 10000 records completes within 60 seconds

@@ -1,0 +1,559 @@
+{
+  "repo": "medinovai-integration-gateway",
+  "tier": 2,
+  "generated": "2026-03-30T16:40:18Z",
+  "last_updated": "2026-03-30T16:40:18Z",
+  "total": 45,
+  "completed": 0,
+  "features": [
+    {
+      "id": "F001",
+      "category": "functional",
+      "priority": "P1",
+      "description": "GET /health returns 200 with service identity and timestamp",
+      "steps": [
+        "Start the application",
+        "GET /health",
+        "Assert status 200 and JSON body includes service name",
+        "Assert no PHI fields in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F002",
+      "category": "functional",
+      "priority": "P1",
+      "description": "GET /ready returns 200 when optional dependency checks pass (stub allowed)",
+      "steps": [
+        "Configure probe toggles for local dev",
+        "GET /ready",
+        "Assert structured readiness payload",
+        "Document behavior when EPG unreachable"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F003",
+      "category": "security",
+      "priority": "P1",
+      "description": "Bearer JWT validation middleware rejects unauthenticated calls to protected routes",
+      "steps": [
+        "POST /api/v1/ingest without Authorization",
+        "Assert 401",
+        "POST with invalid JWT",
+        "Assert 401"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F004",
+      "category": "functional",
+      "priority": "P1",
+      "description": "POST /api/v1/ingest accepts FHIR R4 Bundle and returns acceptance metadata",
+      "steps": [
+        "Obtain valid test JWT",
+        "POST minimal valid FHIR Bundle",
+        "Assert 202 or 200 per contract",
+        "Assert correlation id in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F005",
+      "category": "functional",
+      "priority": "P1",
+      "description": "POST /api/v1/ingest rejects malformed FHIR with 400 and machine-readable errors",
+      "steps": [
+        "POST invalid JSON",
+        "Assert 400",
+        "POST JSON missing resourceType",
+        "Assert validation error body"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F006",
+      "category": "functional",
+      "priority": "P1",
+      "description": "POST /api/v1/ingest accepts HL7v2 payload path when Content-Type and format flags match spec",
+      "steps": [
+        "POST HL7v2 sample message",
+        "Assert parser invoked or accepted",
+        "Assert no raw PHI echoed in logs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F007",
+      "category": "functional",
+      "priority": "P1",
+      "description": "POST /api/v1/ingest/batch accepts up to spec max batch size (10000) metadata",
+      "steps": [
+        "POST batch envelope under limit",
+        "Assert batch_id returned",
+        "Assert items accepted count"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F008",
+      "category": "functional",
+      "priority": "P2",
+      "description": "POST /api/v1/ingest/batch rejects batches exceeding configured maximum",
+      "steps": [
+        "POST batch over max",
+        "Assert 413 or 400 per API policy",
+        "Assert error code stable for clients"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F009",
+      "category": "functional",
+      "priority": "P1",
+      "description": "GET /api/v1/ingest/status/{batch_id} returns status for known batch",
+      "steps": [
+        "Create batch",
+        "GET status with returned id",
+        "Assert state in pending|processing|completed|failed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F010",
+      "category": "functional",
+      "priority": "P2",
+      "description": "GET /api/v1/ingest/status/{batch_id} returns 404 for unknown batch",
+      "steps": [
+        "GET random uuid",
+        "Assert 404",
+        "Assert no internal stack trace in body"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F011",
+      "category": "functional",
+      "priority": "P1",
+      "description": "GET /api/v1/connectors lists registered external connectors",
+      "steps": [
+        "Seed or mock registry",
+        "GET /api/v1/connectors",
+        "Assert array payload",
+        "Assert pagination if defined"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F012",
+      "category": "functional",
+      "priority": "P2",
+      "description": "GET /api/v1/connectors/{id}/health returns per-connector health",
+      "steps": [
+        "Use known connector id",
+        "GET health",
+        "Assert healthy|degraded|down",
+        "Assert latency field optional"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F013",
+      "category": "functional",
+      "priority": "P1",
+      "description": "POST /api/v1/mappings/fhir-to-omop transforms sample Patient to OMOP-shaped output",
+      "steps": [
+        "POST Patient resource",
+        "Assert OMOP person fields present",
+        "Assert mapping version in response"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F014",
+      "category": "functional",
+      "priority": "P2",
+      "description": "POST /api/v1/mappings/fhir-to-omop handles Observation mapping",
+      "steps": [
+        "POST Observation",
+        "Assert measurement row shape",
+        "Assert unit normalization rules applied"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F015",
+      "category": "compliance",
+      "priority": "P1",
+      "description": "Structured audit event emitted for each successful ingest (actor, tenant, resource ids only)",
+      "steps": [
+        "Complete ingest",
+        "Capture log sink",
+        "Assert audit category and phi_safe true",
+        "Assert no raw payload in log"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F016",
+      "category": "compliance",
+      "priority": "P1",
+      "description": "Structured audit event emitted for failed ingest with failure code",
+      "steps": [
+        "Force validation failure",
+        "Assert failure audit event",
+        "Assert correlation_id present"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F017",
+      "category": "security",
+      "priority": "P1",
+      "description": "mTLS server configuration documented and enforced for EPG ingress in deployment manifests",
+      "steps": [
+        "Review TLS settings",
+        "Verify client cert CA configured",
+        "Integration test with test certs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F018",
+      "category": "security",
+      "priority": "P2",
+      "description": "Rate limiting or gateway delegation documented for external connector HTTP ingress",
+      "steps": [
+        "Document limits",
+        "Simulate burst",
+        "Assert 429 or gateway behavior"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F019",
+      "category": "functional",
+      "priority": "P1",
+      "description": "CloudEvent medinovai.integration.record.ingested emitted after successful processing",
+      "steps": [
+        "Mock bus publisher",
+        "Ingest record",
+        "Assert event type and idempotency key"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F020",
+      "category": "functional",
+      "priority": "P1",
+      "description": "CloudEvent medinovai.integration.record.failed emitted on processing failure",
+      "steps": [
+        "Force downstream failure",
+        "Assert failed event",
+        "Assert dead-letter path if applicable"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F021",
+      "category": "functional",
+      "priority": "P2",
+      "description": "CloudEvent medinovai.integration.batch.completed emitted when batch finishes",
+      "steps": [
+        "Complete batch",
+        "Assert batch completed event",
+        "Assert record counts"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F022",
+      "category": "performance",
+      "priority": "P1",
+      "description": "Single-record ingest p99 latency within 500ms under reference load profile",
+      "steps": [
+        "Run load test harness",
+        "Compute p99",
+        "Assert under 500ms or document gap"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F023",
+      "category": "performance",
+      "priority": "P1",
+      "description": "Sustain 100 RPS sustained ingest with error rate below threshold",
+      "steps": [
+        "Load test 100 rps",
+        "Measure errors",
+        "Assert within SLO"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F024",
+      "category": "performance",
+      "priority": "P2",
+      "description": "Batch of 10000 records completes within 60 seconds in reference environment",
+      "steps": [
+        "Submit max batch",
+        "Measure wall time",
+        "Assert under 60s or document hardware assumptions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F025",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Concurrent connector health checks support at least 8 connectors",
+      "steps": [
+        "Register 8 connectors",
+        "Run parallel health",
+        "Assert all complete"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F026",
+      "category": "functional",
+      "priority": "P2",
+      "description": "CSV batch ingest path validates schema before transformation",
+      "steps": [
+        "POST CSV batch",
+        "Assert schema validation errors",
+        "Assert accepted rows counted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F027",
+      "category": "security",
+      "priority": "P1",
+      "description": "Secrets for connector credentials retrieved via secrets-manager-bridge (no env file secrets)",
+      "steps": [
+        "Mock bridge",
+        "Start service",
+        "Assert credentials never logged"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F028",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Service registers with medinovai-registry on startup when REGISTRY_URL set",
+      "steps": [
+        "Set REGISTRY_URL mock",
+        "Start app",
+        "Assert registration payload"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F029",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Graceful shutdown flushes in-flight publishes or marks batches incomplete safely",
+      "steps": [
+        "SIGTERM during batch",
+        "Assert state consistent",
+        "Assert recovery documented"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F030",
+      "category": "compliance",
+      "priority": "P2",
+      "description": "BAA requirement for external connectors enforced via configuration flag and audit",
+      "steps": [
+        "Enable strict mode",
+        "Attempt unapproved connector",
+        "Assert rejection"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F031",
+      "category": "functional",
+      "priority": "P1",
+      "description": "OpenAPI schema published at /docs and matches implemented routes",
+      "steps": [
+        "GET /openapi.json",
+        "Assert paths include ingest and mappings",
+        "CI contract test"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F032",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Idempotency key header prevents duplicate ingest for same payload",
+      "steps": [
+        "POST with Idempotency-Key",
+        "Retry same",
+        "Assert single downstream write"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F033",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Tenant isolation: ingest scoped by tenant claim with no cross-tenant reads",
+      "steps": [
+        "Two tenants",
+        "Ingest as A",
+        "Query as B",
+        "Assert isolation"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F034",
+      "category": "functional",
+      "priority": "P1",
+      "description": "HL7v2 ADT message maps through to OMOP visit occurrence (integration test)",
+      "steps": [
+        "Provide ADT fixture",
+        "Run pipeline",
+        "Assert visit row"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F035",
+      "category": "functional",
+      "priority": "P1",
+      "description": "HL7v2 ORM message maps to order-related OMOP tables (integration test)",
+      "steps": [
+        "Provide ORM fixture",
+        "Run pipeline",
+        "Assert drug exposure or procedure as designed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F036",
+      "category": "functional",
+      "priority": "P1",
+      "description": "HL7v2 ORU message maps to measurement/observation OMOP tables (integration test)",
+      "steps": [
+        "Provide ORU fixture",
+        "Run pipeline",
+        "Assert measurement"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F037",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Dead letter queue path for unrecoverable transform errors",
+      "steps": [
+        "Inject bad mapping",
+        "Assert DLQ message",
+        "Assert alert hook optional"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F038",
+      "category": "ux",
+      "priority": "P3",
+      "description": "README documents local docker-compose flow and required env vars",
+      "steps": [
+        "Follow README",
+        "docker compose up",
+        "Hit /health"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F039",
+      "category": "performance",
+      "priority": "P2",
+      "description": "Readiness probe distinguishes cold start vs dependency failure",
+      "steps": [
+        "Stop dependency",
+        "GET /ready",
+        "Assert not ready with reason code"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F040",
+      "category": "security",
+      "priority": "P2",
+      "description": "CORS restricted to known origins when browser clients enabled",
+      "steps": [
+        "Preflight from allowed origin",
+        "Assert headers",
+        "Disallowed origin rejected"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F041",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Correlation ID propagated from incoming header to logs and CloudEvents",
+      "steps": [
+        "Send X-Correlation-ID",
+        "Ingest",
+        "Assert same id in logs and event"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F042",
+      "category": "compliance",
+      "priority": "P1",
+      "description": "21 CFR Part 11: immutable append-only audit sink integration stubbed with interface",
+      "steps": [
+        "Define audit port",
+        "Swap mock",
+        "Assert no updates only appends"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F043",
+      "category": "functional",
+      "priority": "P2",
+      "description": "FHIR Bundle transaction handling respects bundle type batch vs collection",
+      "steps": [
+        "POST batch Bundle",
+        "Assert ordering",
+        "POST collection",
+        "Assert semantics"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F044",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Integration test: EPG mTLS handshake to gateway (test containers)",
+      "steps": [
+        "Run tls test suite",
+        "Assert handshake success"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F045",
+      "category": "functional",
+      "priority": "P2",
+      "description": "End-to-end test: FHIR ingest through to OMOP write (mock data-services)",
+      "steps": [
+        "Wire mocks",
+        "Ingest Patient",
+        "Assert OMOP API called with expected payload"
+      ],
+      "passes": false
+    }
+  ]
+}

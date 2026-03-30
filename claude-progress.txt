@@ -1,0 +1,20 @@
+=== MedinovAI Harness 2.1 — Progress Log ===
+Repo: medinovai-integration-gateway
+Tier: 2
+Initialized: 2026-03-30
+Total Features: 45
+Features Completed: 0
+Features Remaining: 45
+
+--- SESSION 0 (Initializer) ---
+Date: 2026-03-30T00:00:00Z
+Model: claude-opus-4-6
+Actions:
+  - CLAUDE.md written (Harness 2.1 Section 9 template, Tier 2)
+  - init.sh written (Python/FastAPI; smoke test against /health)
+  - feature_list.json written (45 features, all passes:false)
+  - FastAPI scaffold: main.py, Dockerfile, docker-compose.yml, README.md
+  - specs/active/medinovai-integration-gateway/specification.yaml copied from platform brain repo
+  - .claude/settings.json and commands (start-session, end-session, checkpoint)
+Status: COMPLETE
+Next Session: Pick F001 — Implement GET /ready with configurable dependency probe stubs (EPG + datastore)
