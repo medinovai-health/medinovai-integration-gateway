@@ -1,0 +1,104 @@
+name: E2E Stack
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - '.github/workflows/e2e.yml'
+      - 'docker-compose.e2e.yml'
+      - 'tests/e2e/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/e2e.yml'
+      - 'docker-compose.e2e.yml'
+      - 'tests/e2e/**'
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout integration gateway
+        uses: actions/checkout@v4
+        with:
+          path: medinovai-integration-gateway
+          fetch-depth: 1
+
+      - name: Checkout medinovai-omop-lakehouse
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/medinovai-omop-lakehouse
+          path: medinovai-omop-lakehouse
+
+      - name: Checkout medinovai-connector-framework
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/medinovai-connector-framework
+          path: medinovai-connector-framework
+
+      - name: Checkout medinovai-evidence-store
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/medinovai-evidence-store
+          path: medinovai-evidence-store
+
+      - name: Checkout medinovai-governance-engine
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/medinovai-governance-engine
+          path: medinovai-governance-engine
+
+      - name: Checkout medinovai-cohort-studio
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/medinovai-cohort-studio
+          path: medinovai-cohort-studio
+
+      - name: Checkout medinovai-workspace-operator
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/medinovai-workspace-operator
+          path: medinovai-workspace-operator
+
+      - name: Docker Compose — build and start stack
+        run: docker compose -f medinovai-integration-gateway/docker-compose.e2e.yml up -d --build
+
+      - name: Wait for service health endpoints
+        run: |
+          set -euo pipefail
+          for port in 18000 18001 18002 18003 18004 18005 18006; do
+            echo "Waiting for localhost:$port/health ..."
+            for i in $(seq 1 60); do
+              if curl -sf --max-time 5 "http://127.0.0.1:${port}/health" >/dev/null; then
+                echo "OK $port"
+                break
+              fi
+              if [ "$i" -eq 60 ]; then
+                echo "::error::Timeout waiting for port $port"
+                docker compose -f medinovai-integration-gateway/docker-compose.e2e.yml ps
+                docker compose -f medinovai-integration-gateway/docker-compose.e2e.yml logs --tail 80
+                exit 1
+              fi
+              sleep 2
+            done
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install E2E test dependencies
+        run: pip install httpx pytest
+        working-directory: medinovai-integration-gateway
+
+      - name: Cross-service E2E tests
+        run: pytest tests/e2e -v
+        working-directory: medinovai-integration-gateway
+
+      - name: Docker Compose teardown
+        if: always()
+        run: docker compose -f medinovai-integration-gateway/docker-compose.e2e.yml down -v

@@ -1,0 +1,65 @@
+name: CI Pipeline
+on:
+  push:
+    branches: [main, develop, 'feature/*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install ruff mypy
+      - run: ruff check src/
+      - run: mypy src/ --ignore-missing-imports
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -r requirements.txt && pip install pytest pytest-cov pytest-asyncio
+      - run: pytest tests/unit/ -v --cov=src --cov-report=xml --cov-fail-under=60
+      - uses: actions/upload-artifact@v4
+        with: {name: coverage-report, path: coverage.xml}
+
+  integration-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env: {POSTGRES_USER: test, POSTGRES_PASSWORD: test, POSTGRES_DB: testdb}
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -r requirements.txt && pip install pytest pytest-asyncio
+      - run: pytest tests/integration/ -v -m integration
+        env: {MOS_DB_HOST: localhost, MOS_DB_PORT: '5432', MOS_DB_NAME: testdb, MOS_DB_USER: test, MOS_DB_PASS: test}
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install bandit safety
+      - run: bandit -r src/ -ll --format json -o bandit-report.json || true
+      - run: safety check --json --output safety-report.json || true
+      - uses: actions/upload-artifact@v4
+        with: {name: security-reports, path: '*.json'}
+
+  build:
+    needs: [lint, unit-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t $SERVICE_NAME:${{ github.sha }} .
+        env:
+          SERVICE_NAME: medinovai-integration-gateway

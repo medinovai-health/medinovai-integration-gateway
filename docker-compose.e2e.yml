@@ -1,0 +1,84 @@
+# Cross-service E2E stack: build contexts assume sibling repo checkouts next to
+# medinovai-integration-gateway (see .github/workflows/e2e.yml).
+
+name: medinovai-microservices-e2e
+
+services:
+  integration-gateway:
+    build:
+      context: ./medinovai-integration-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "18000:8000"
+    environment:
+      PORT: "8000"
+      SERVICE_NAME: medinovai-integration-gateway
+    networks:
+      - e2e
+
+  omop-lakehouse:
+    build:
+      context: ./medinovai-omop-lakehouse
+      dockerfile: Dockerfile
+    ports:
+      - "18001:8000"
+    environment:
+      SERVICE_NAME: medinovai-omop-lakehouse
+      PORT: "8000"
+    networks:
+      - e2e
+
+  connector-framework:
+    build:
+      context: ./medinovai-connector-framework
+      dockerfile: Dockerfile
+    ports:
+      - "18002:8000"
+    networks:
+      - e2e
+
+  evidence-store:
+    build:
+      context: ./medinovai-evidence-store
+      dockerfile: Dockerfile
+    ports:
+      - "18003:8000"
+    environment:
+      MOS_SERVICE_NAME: medinovai-evidence-store
+    networks:
+      - e2e
+
+  governance-engine:
+    build:
+      context: ./medinovai-governance-engine
+      dockerfile: Dockerfile
+    ports:
+      - "18004:8000"
+    environment:
+      EVIDENCE_STORE_URL: http://evidence-store:8000
+    depends_on:
+      - evidence-store
+    networks:
+      - e2e
+
+  cohort-studio:
+    build:
+      context: ./medinovai-cohort-studio
+      dockerfile: Dockerfile
+    ports:
+      - "18005:8000"
+    networks:
+      - e2e
+
+  workspace-operator:
+    build:
+      context: ./medinovai-workspace-operator
+      dockerfile: Dockerfile
+    ports:
+      - "18006:8000"
+    networks:
+      - e2e
+
+networks:
+  e2e:
+    driver: bridge
