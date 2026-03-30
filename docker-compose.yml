@@ -1,5 +1,23 @@
 # Local development stack — backup volumes externally per MedinovAI policy
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: medinovai-integration-gateway-postgres
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: integration_gateway
+    ports:
+      - "5432:5432"
+    volumes:
+      - medinovai_integration_gateway_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gateway -d integration_gateway"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   medinovai-integration-gateway:
     build: .
     image: medinovai-integration-gateway:latest
@@ -10,9 +28,20 @@ services:
       PORT: "8000"
       SERVICE_NAME: medinovai-integration-gateway
       REGISTRY_URL: http://medinovai-registry.medinovai:8000
+      MOS_DB_HOST: postgres
+      MOS_DB_PORT: "5432"
+      MOS_DB_NAME: integration_gateway
+      MOS_DB_USER: gateway
+      MOS_DB_PASS: gateway
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
+
+volumes:
+  medinovai_integration_gateway_pg:

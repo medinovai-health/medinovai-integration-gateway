@@ -9,11 +9,8 @@ from fastapi.testclient import TestClient
 
 pytest.importorskip("httpx")
 
-from main import app
 from parsers.fhir_parser import FhirParseError, parse_fhir_bundle_bytes
 from parsers.hl7_parser import Hl7ParseError, parse_hl7_message
-
-mos_client = TestClient(app)
 
 
 def _minimal_fhir_bundle() -> bytes:
@@ -73,7 +70,7 @@ def test_parse_hl7_empty_raises() -> None:
         parse_hl7_message("")
 
 
-def test_post_ingest_fhir_accepted() -> None:
+def test_post_ingest_fhir_accepted(mos_client: TestClient) -> None:
     mos_resp = mos_client.post(
         "/api/v1/ingest/fhir",
         content=_minimal_fhir_bundle(),
@@ -90,7 +87,7 @@ def test_post_ingest_fhir_accepted() -> None:
     assert mos_body["format"] == "fhir"
 
 
-def test_post_ingest_hl7_accepted() -> None:
+def test_post_ingest_hl7_accepted(mos_client: TestClient) -> None:
     mos_msg = (
         "MSH|^~\\&|SAPP|SFAC|RAPP|RFAC|202401011200||ORU^R01|MSG002|P|2.5\r"
         "PID|1||999^^^MRN||Test^User||19900101|F\r"
@@ -106,7 +103,7 @@ def test_post_ingest_hl7_accepted() -> None:
     assert mos_resp.json()["format"] == "hl7v2"
 
 
-def test_post_ingest_batch_returns_job() -> None:
+def test_post_ingest_batch_returns_job(mos_client: TestClient) -> None:
     mos_payload = {
         "items": [
             {
@@ -125,6 +122,6 @@ def test_post_ingest_batch_returns_job() -> None:
     assert mos_status.json()["state"] in {"pending", "processing", "completed", "failed"}
 
 
-def test_ingest_status_unknown_404() -> None:
+def test_ingest_status_unknown_404(mos_client: TestClient) -> None:
     mos_resp = mos_client.get("/api/v1/ingest/status/00000000-0000-0000-0000-000000000099")
     assert mos_resp.status_code == 404

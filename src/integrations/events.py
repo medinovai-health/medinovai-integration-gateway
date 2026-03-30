@@ -1,4 +1,4 @@
-"""CloudEvents-style publishing (Kafka-compatible payload; in-memory default)."""
+"""CloudEvents-style publishing (Kafka-compatible payload; structured logs only)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 import os
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import structlog
 
@@ -19,16 +19,18 @@ mos_logger = structlog.get_logger()
 
 
 class CloudEventPublisher:
-    """Emit structured events; logs JSON when Kafka not configured."""
+    """Emit structured events via logs (or Kafka intent when brokers are set)."""
 
     def __init__(self) -> None:
-        self._mos_memory: List[Dict[str, Any]] = []
         self._mos_kafka = os.environ.get(E_KAFKA_BROKERS_ENV, "").strip()
 
     def drain_memory(self) -> List[Dict[str, Any]]:
-        mos_out = list(self._mos_memory)
-        self._mos_memory.clear()
-        return mos_out
+        """Backward-compatible no-op; events are not buffered in process memory.
+
+        Returns:
+            Empty list. Use log aggregation or Kafka for durable event history.
+        """
+        return []
 
     async def publish(
         self,
@@ -38,6 +40,18 @@ class CloudEventPublisher:
         mos_correlation_id: str,
         mos_tenant_id: str,
     ) -> str:
+        """Build a CloudEvent envelope and record it (log or Kafka-pending).
+
+        Args:
+            mos_event_type: CloudEvents ``type``.
+            mos_source: Provenance URI or logical source id.
+            mos_data: Event payload (phi_safe fields only).
+            mos_correlation_id: Request correlation id.
+            mos_tenant_id: Tenant scope.
+
+        Returns:
+            Generated event id (UUID string).
+        """
         mos_event_id = str(uuid.uuid4())
         mos_ce = {
             "specversion": "1.0",
@@ -72,5 +86,4 @@ class CloudEventPublisher:
                 category="business",
                 phi_safe=True,
             )
-            self._mos_memory.append(mos_ce)
         return mos_event_id

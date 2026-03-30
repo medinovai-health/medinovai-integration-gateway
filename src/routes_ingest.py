@@ -17,11 +17,27 @@ _mos_skip = os.environ.get("MOS_SKIP_INGEST_AUTH", "true").lower()
 E_SKIP_AUTH = _mos_skip in {"1", "true", "yes"}
 
 mos_logger = structlog.get_logger()
-_mos_orch = IngestOrchestrator()
 
 
-def get_orchestrator() -> IngestOrchestrator:
-    return _mos_orch
+def get_orchestrator(request: Request) -> IngestOrchestrator:
+    """Resolve orchestrator from app state (initialized in lifespan).
+
+    Args:
+        request: Active HTTP request.
+
+    Returns:
+        Shared :class:`IngestOrchestrator` instance.
+
+    Raises:
+        HTTPException: If lifespan has not attached the orchestrator.
+    """
+    mos_orch = getattr(request.app.state, "mos_orchestrator", None)
+    if mos_orch is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="service_initializing",
+        )
+    return mos_orch
 
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"])
@@ -84,9 +100,11 @@ async def ingest_fhir(
         content_length=len(mos_body),
     )
     try:
-        mos_result = await get_orchestrator().ingest_fhir_bundle(
+        mos_result = await get_orchestrator(request).ingest_fhir_bundle(
             mos_body, mos_ct, mos_tenant_id, mos_correlation_id
         )
+    except HTTPException:
+        raise
     except Exception as mos_exc:  # noqa: BLE001
         mos_logger.error(
             "ingest_fhir_failed",
@@ -130,11 +148,13 @@ async def ingest_hl7(
         content_length=len(mos_body),
     )
     try:
-        mos_result = await get_orchestrator().ingest_hl7(
+        mos_result = await get_orchestrator(request).ingest_hl7(
             mos_body,
             mos_tenant_id,
             mos_correlation_id,
         )
+    except HTTPException:
+        raise
     except Exception as mos_exc:  # noqa: BLE001
         mos_logger.error(
             "ingest_hl7_failed",
@@ -153,6 +173,7 @@ async def ingest_hl7(
 
 @router.post("/batch", status_code=status.HTTP_202_ACCEPTED)
 async def ingest_batch(
+    request: Request,
     mos_payload: BatchIngestRequest,
     response: Response,
     authorization: Optional[str] = Header(default=None),
@@ -170,7 +191,7 @@ async def ingest_batch(
     if len(mos_payload.items) > E_MAX_BATCH_ITEMS:
         raise HTTPException(status_code=413, detail="batch_too_large")
     mos_items = [mos_i.model_dump() for mos_i in mos_payload.items]
-    mos_result = await get_orchestrator().ingest_batch(
+    mos_result = await get_orchestrator(request).ingest_batch(
         mos_items,
         mos_tenant_id,
         mos_correlation_id,
@@ -180,12 +201,13 @@ async def ingest_batch(
 
 @router.get("/status/{job_id}")
 async def ingest_status(
+    request: Request,
     job_id: str,
     authorization: Optional[str] = Header(default=None),
 ) -> dict[str, Any]:
-    """Return ingestion job state (in-memory store)."""
+    """Return ingestion job state from PostgreSQL."""
     _require_auth(authorization)
-    mos_rec = await get_orchestrator().jobs.get_job(job_id)
+    mos_rec = await get_orchestrator(request).jobs.get_job(job_id)
     if mos_rec is None:
         raise HTTPException(status_code=404, detail="job_not_found")
     return {
