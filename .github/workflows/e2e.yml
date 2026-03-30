@@ -1,3 +1,6 @@
+# Shared cross-service E2E: builds all seven microservices via docker-compose.e2e.yml
+# (sibling repo checkouts) and runs integration-gateway tests/e2e.
+
 name: E2E Stack
 on:
   workflow_dispatch:

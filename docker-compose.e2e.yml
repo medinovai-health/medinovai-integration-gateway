@@ -1,12 +1,13 @@
-# Cross-service E2E stack: build contexts assume sibling repo checkouts next to
-# medinovai-integration-gateway (see .github/workflows/e2e.yml).
+# Cross-service E2E stack: paths are relative to this file (inside
+# medinovai-integration-gateway). CI checks out sibling repos next to this folder
+# (see .github/workflows/e2e.yml).
 
 name: medinovai-microservices-e2e
 
 services:
   integration-gateway:
     build:
-      context: ./medinovai-integration-gateway
+      context: .
       dockerfile: Dockerfile
     ports:
       - "18000:8000"
@@ -18,7 +19,7 @@ services:
 
   omop-lakehouse:
     build:
-      context: ./medinovai-omop-lakehouse
+      context: ../medinovai-omop-lakehouse
       dockerfile: Dockerfile
     ports:
       - "18001:8000"
@@ -30,7 +31,7 @@ services:
 
   connector-framework:
     build:
-      context: ./medinovai-connector-framework
+      context: ../medinovai-connector-framework
       dockerfile: Dockerfile
     ports:
       - "18002:8000"
@@ -39,7 +40,7 @@ services:
 
   evidence-store:
     build:
-      context: ./medinovai-evidence-store
+      context: ../medinovai-evidence-store
       dockerfile: Dockerfile
     ports:
       - "18003:8000"
@@ -50,7 +51,7 @@ services:
 
   governance-engine:
     build:
-      context: ./medinovai-governance-engine
+      context: ../medinovai-governance-engine
       dockerfile: Dockerfile
     ports:
       - "18004:8000"
@@ -63,7 +64,7 @@ services:
 
   cohort-studio:
     build:
-      context: ./medinovai-cohort-studio
+      context: ../medinovai-cohort-studio
       dockerfile: Dockerfile
     ports:
       - "18005:8000"
@@ -72,7 +73,7 @@ services:
 
   workspace-operator:
     build:
-      context: ./medinovai-workspace-operator
+      context: ../medinovai-workspace-operator
       dockerfile: Dockerfile
     ports:
       - "18006:8000"

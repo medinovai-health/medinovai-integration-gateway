@@ -61,5 +61,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t $SERVICE_NAME:${{ github.sha }} .
-        env:
-          SERVICE_NAME: medinovai-integration-gateway
+        env: {SERVICE_NAME: medinovai-integration-gateway}
