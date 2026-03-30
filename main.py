@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 import os
+import sys
 import uuid
+from pathlib import Path
+
+_MOS_SRC = Path(__file__).resolve().parent / "src"
+if str(_MOS_SRC) not in sys.path:
+    sys.path.insert(0, str(_MOS_SRC))
+
 from datetime import datetime, timezone
 from typing import Dict
 
 import structlog
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+
+from routes_ingest import router as mos_ingest_router
 
 E_SERVICE_NAME = "medinovai-integration-gateway"
 E_DEFAULT_PORT = "8000"
@@ -52,9 +61,10 @@ def create_app() -> FastAPI:
     """
     mos_app = FastAPI(
         title=E_SERVICE_NAME,
-        version="0.1.0",
-        description="Integration Platform ingress gateway (scaffold).",
+        version="0.2.0",
+        description="Integration Platform ingress gateway (Phase E Sprint 5 — FHIR/HL7 ingest).",
     )
+    mos_app.include_router(mos_ingest_router)
 
     @mos_app.get("/health", response_model=HealthResponse, tags=["ops"])
     async def health() -> HealthResponse:

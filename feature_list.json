@@ -2,8 +2,8 @@
   "repo": "medinovai-integration-gateway",
   "tier": 2,
   "generated": "2026-03-30T16:40:18Z",
-  "last_updated": "2026-03-30T16:40:18Z",
-  "total": 45,
+  "last_updated": "2026-03-30T20:00:00Z",
+  "total": 67,
   "completed": 0,
   "features": [
     {
@@ -552,6 +552,273 @@
         "Wire mocks",
         "Ingest Patient",
         "Assert OMOP API called with expected payload"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F046",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: FHIR R4 Bundle JSON validated with fhir.resources Bundle.model_validate",
+      "steps": [
+        "POST collection Bundle JSON",
+        "Assert parser extracts resourceType counts",
+        "Assert invalid Bundle returns FhirParseError"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F047",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Sprint5: FHIR Bundle XML ingress path via xmltodict normalization",
+      "steps": [
+        "POST application/fhir+xml minimal Bundle",
+        "Assert parse or controlled 400",
+        "Document namespace limitations"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F048",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Sprint5: Batch/transaction Bundle types flagged for ordering semantics",
+      "steps": [
+        "POST batch Bundle",
+        "Assert batch_semantics true in summary",
+        "POST collection",
+        "Assert batch_semantics false"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F049",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: HL7v2 ADT extracts PID and PV1 segment field arrays",
+      "steps": [
+        "Parse ADT^A01 fixture",
+        "Assert PID and PV1 present",
+        "Assert DOB and sex indices populated"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F050",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: HL7v2 ORU extracts OBR and OBX segments for lab pipeline",
+      "steps": [
+        "Parse ORU^R01 with OBR/OBX",
+        "Assert OBX observation rows in OMOP preview",
+        "Assert no raw values in audit logs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F051",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Sprint5: HL7v2 ORM message accepted and typed via MSH-9",
+      "steps": [
+        "Parse ORM^O01 sample",
+        "Assert message_type ORM",
+        "Map to OMOP order-shaped stub or document deferral"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F052",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Sprint5: HL7v2 MDM message accepted and segmented",
+      "steps": [
+        "Parse MDM^T02 sample",
+        "Assert segments discovered",
+        "Assert mapper handles MDM without crash"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F053",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: HL7v2 parsing uses hl7apy TOLERANT validation and ER7 delimiters",
+      "steps": [
+        "Parse message with standard separators",
+        "Assert MSH-2 encoding field captured",
+        "Corrupt message yields Hl7ParseError"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F054",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: FHIR Patient maps to OMOP PERSON with stable synthetic person_id",
+      "steps": [
+        "Map Patient with id and birthDate",
+        "Assert person_id stable per tenant+id",
+        "Assert gender_concept_id mapped"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F055",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: FHIR Observation maps to MEASUREMENT row with unit and code",
+      "steps": [
+        "Map Observation with valueQuantity",
+        "Assert measurement_source_value from coding",
+        "Assert value_as_number set"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F056",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: FHIR Condition maps to CONDITION_OCCURRENCE",
+      "steps": [
+        "Bundle with Condition referencing Patient",
+        "Assert condition_occurrence_id stable",
+        "Assert condition_start_date from onset"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F057",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: FHIR MedicationRequest/Statement maps to DRUG_EXPOSURE",
+      "steps": [
+        "Map MedicationRequest with authoredOn",
+        "Assert drug_source_value from coding",
+        "Assert person linkage from subject"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F058",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: FHIR Encounter maps to VISIT_OCCURRENCE",
+      "steps": [
+        "Map Encounter with period",
+        "Assert visit_start_datetime",
+        "Assert visit_concept_id default inpatient outpatient stub"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F059",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: HL7 ORU path produces OMOP observation/measurement preview rows",
+      "steps": [
+        "Ingest ORU fixture",
+        "Assert observation list non-empty when OBX present",
+        "Assert person_id ties to PID-3"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F060",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: POST /api/v1/ingest/fhir returns 202 with correlation_id",
+      "steps": [
+        "POST valid Bundle",
+        "Assert 202",
+        "Assert X-Correlation-ID header when provided"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F061",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: POST /api/v1/ingest/hl7 returns 202 for ER7 payload",
+      "steps": [
+        "POST ORU message bytes",
+        "Assert 202",
+        "Assert summary segments list"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F062",
+      "category": "compliance",
+      "priority": "P1",
+      "description": "Sprint5: PHI heuristic scanner emits counts-only audit on pattern hits",
+      "steps": [
+        "Ingest payload with SSN-like pattern",
+        "Assert phi_pattern_hits log",
+        "Assert raw values not logged"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F063",
+      "category": "security",
+      "priority": "P1",
+      "description": "Sprint5: EPG client supports mTLS cert paths and skips when MOS_EPG_URL unset",
+      "steps": [
+        "Unset MOS_EPG_URL",
+        "Ingest record",
+        "Assert epg status skipped",
+        "Set cert env vars and mock HTTPS"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F064",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: OMOP lakehouse client uses tenacity exponential backoff on HTTP failures",
+      "steps": [
+        "Mock 500 then 200",
+        "Assert retries",
+        "Assert final success"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F065",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: CloudEvents publisher emits ingested, failed, and batch.completed types",
+      "steps": [
+        "Successful ingest",
+        "Failed ingest",
+        "Batch complete",
+        "Assert three distinct type strings in sink"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F066",
+      "category": "functional",
+      "priority": "P1",
+      "description": "Sprint5: Dead letter queue stores failure metadata with bounded maxlen",
+      "steps": [
+        "Force parse failure",
+        "Assert DLQ entry",
+        "Overflow respects MOS_DLQ_MAX_ITEMS"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F067",
+      "category": "functional",
+      "priority": "P2",
+      "description": "Sprint5: X-Correlation-ID and X-Tenant-ID headers honored on ingest routes",
+      "steps": [
+        "Send custom correlation and tenant",
+        "Assert JSON correlation_id matches",
+        "Assert downstream events include same correlation"
       ],
       "passes": false
     }
