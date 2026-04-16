@@ -91,3 +91,17 @@ pytest tests/integration/ -q
 ## Last Updated
 
 2026-03-30 — Harness 2.1 Session 0 initializer (Tier 2 template, Section 9)
+
+## Code Navigation — jCodeMunch (use instead of reading files)
+
+All repos are pre-indexed by a background daemon. Use these MCP tools:
+
+```
+list_repos                                             → check indexed repos
+search_symbols: { "repo": "<name>", "query": "..." }  → find functions/classes
+get_symbol:     { "repo": "<name>", "symbol_id": "..." } → get exact source
+get_repo_outline:   { "repo": "<name>" }               → repo structure
+get_context_bundle: { "repo": "<name>", "symbol_id": "..." } → symbol + imports
+```
+
+Fall back to direct file reads only when editing. Zero cost — uses local Ollama.

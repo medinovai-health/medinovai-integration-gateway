@@ -1,0 +1,18 @@
+---
+description: Use jcodemunch MCP for all code navigation (token-efficient)
+alwaysApply: true
+---
+# Code Navigation — jCodeMunch
+
+Use jcodemunch-mcp tools. Never read full files to find code.
+
+```
+list_repos                                            → verify repo is indexed
+search_symbols: { "repo": "<name>", "query": "..." } → find any symbol
+get_symbol:     { "repo": "<name>", "symbol_id": "..." } → get source
+get_repo_outline:   { "repo": "<name>" }             → structure overview
+get_context_bundle: { "repo": "<name>", "symbol_id": "..." } → symbol + imports
+search_text:    { "repo": "<name>", "query": "..." } → full-text search
+```
+
+Fall back to file reads only when editing. Background daemon keeps all repos indexed.

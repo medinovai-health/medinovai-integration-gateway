@@ -12,3 +12,6 @@ htmlcov/
 .env
 .env.*
 !.env.example
+
+# jCodemunch local symbol index
+.jcodemunch/
